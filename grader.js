@@ -22,10 +22,12 @@ References:
 
 */
 
+var sys = require('util');
 var fs = require('fs');
 var program = require('commander');
 var cheerio = require('cheerio');
-var HTML_DEFAULT = "index.html";
+var rest = require('restler');
+var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
 
 var assertFileExists = function(infile) {
@@ -62,13 +64,28 @@ var clone = function(fn) {
     return fn.bind({});
 };
 
+var callback = function(cont) {
+    checkHtmlFile(cont, program.checks);
+};
+
 if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+        .option('-u, --url <url_file>', 'Path to url')
         .parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
+    if (program.url) {
+	var temporal = rest.get(program.url);
+	var checkJson = checkHtmlFile(program.file, program.checks);
+    }
+    else if (program.file) {
+	var checkJson = checkHtmlFile(program.file, program.checks);
+    }
+    else {
+	console.log("Put a file or url");
+    };
     var outJson = JSON.stringify(checkJson, null, 4);
+    console.log("json");
     console.log(outJson);
 } else {
     exports.checkHtmlFile = checkHtmlFile;
